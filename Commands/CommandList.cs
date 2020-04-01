@@ -7,6 +7,9 @@ namespace TSD.Akka.Commands
         [Command(typeof(PopulationCommand), LongName = "population_create", Description = "Creates people")]
         CreatePopulation,
 
+        [Command(typeof(DoctorCommand), LongName = "doctor_create", Description = "Add new person with healing capabilities to the population")]
+        CreateDoctor,
+
         [Command(typeof(InfectCommand), LongName = "infect_somebody", Description = "Infects a random person")]
         InfectSomebody,
 

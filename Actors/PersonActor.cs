@@ -101,10 +101,23 @@ namespace TSD.Akka.Actors
 
         }
 
+        private void OnHealMessage(DoctorActor.HealMessage message)
+        {
+            state = PersonState.Uninfected;
+            Become(Uninfected);
+        }
+
+        private void Uninfected()
+        {
+            Receive<StartDayMessage>(OnStartDayMessage);
+            Receive<InfectedMessage>(OnInfectedMessage);
+        }
+
         private void Infected()
         {
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
+            Receive<DoctorActor.HealMessage>(OnHealMessage);
         }
 
         private void Vaccinated()
