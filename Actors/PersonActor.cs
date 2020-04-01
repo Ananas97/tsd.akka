@@ -39,7 +39,8 @@ namespace TSD.Akka.Actors
         {
             Uninfected,
             Infected,
-            Vaccinated
+            Vaccinated,
+            Dead
         }
 
         private readonly ILoggingAdapter log = Context.GetLogger();
@@ -59,6 +60,7 @@ namespace TSD.Akka.Actors
 
         private void OnStartDayMessage(StartDayMessage message)
         {
+            if (new Random().NextDouble() < 0.75) Become(Dead);
             int contacts = random.Next(0, SocialContacts);
             for (int i = 0; i < contacts; i++)
             {
@@ -109,5 +111,7 @@ namespace TSD.Akka.Actors
         {
             Receive<StartDayMessage>(OnStartDayMessage);
         }
+        
+        private void Dead(){}
     }
 }
