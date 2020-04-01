@@ -40,7 +40,8 @@ namespace TSD.Akka.Actors
             Uninfected,
             Infected,
             Vaccinated,
-            Dead
+            Dead,
+            Carrier
         }
 
         private readonly ILoggingAdapter log = Context.GetLogger();
@@ -59,13 +60,14 @@ namespace TSD.Akka.Actors
 
 
         private void OnStartDayMessage(StartDayMessage message)
-        {
-            if (state == PersonState.Infected && new Random().NextDouble() < 0.05) Become(Dead);
+        {            
             int contacts = random.Next(0, SocialContacts);
             for (int i = 0; i < contacts; i++)
             {
                 Chat();
             }
+
+            if (state == PersonState.Infected && random.NextDouble() < 0.05) Become(Dead);
         }
 
         private void Chat()
@@ -80,6 +82,10 @@ namespace TSD.Akka.Actors
             {
                 randomPerson.Tell(new InfectedMessage("Hello, my friend! I'm infected, and I'll infect you too!"));
             }
+            else if (state == PersonState.Carrier)
+            {
+                randomPerson.Tell(new InfectedMessage("Hello, my friend! I wont die but I'll infect you!"));
+            }
         }
 
 
@@ -90,7 +96,6 @@ namespace TSD.Akka.Actors
 
         private void OnInfectedMessage(InfectedMessage message)
         {
-
             if (message.MessageText == "Initial infection." || random.Next() % 100 < TransmissionProbability)
             {
                 var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
@@ -98,7 +103,7 @@ namespace TSD.Akka.Actors
 
                 Become(Infected);
             }
-
+            else if(random.NextDouble()<0.05) Become(Carrier);
         }
 
         private void OnHealMessage(DoctorActor.HealMessage message)
@@ -126,5 +131,11 @@ namespace TSD.Akka.Actors
         }
         
         private void Dead(){}
+
+        private void Carrier()
+        {
+            Receive<StartDayMessage>(OnStartDayMessage);
+            Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm sending you an infection!"), Context.Self));
+        }
     }
 }
