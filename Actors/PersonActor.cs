@@ -24,10 +24,17 @@ namespace TSD.Akka.Actors
             public InfectedMessage(string messageText) => MessageText = messageText;
         }
 
+        public class RecoveryMessage
+        {
+            public string MessageText { get; }
+            public RecoveryMessage(string messageText) => MessageText = messageText;
+        }
+
         public enum PersonState
         {
             Uninfected,
             Infected,
+            Recovered,
         }
 
         private readonly ILoggingAdapter log = Context.GetLogger();
@@ -40,6 +47,7 @@ namespace TSD.Akka.Actors
 
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<InfectedMessage>(OnInfectedMessage);
+            Receive<RecoveryMessage>(OnRecoveryMessage);
         }
 
 
@@ -77,6 +85,12 @@ namespace TSD.Akka.Actors
         {
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
+        }
+
+        private void OnRecoveryMessage(RecoveryMessage message)
+        {
+          // if (new Random().NextDouble() < 0.3)
+            state = PersonState.Recovered;
         }
     }
 }
