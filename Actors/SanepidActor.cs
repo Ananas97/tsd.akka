@@ -9,17 +9,25 @@ namespace TSD.Akka.Actors
     public class StatsReplyMessage
     {
         public int Infected { get; }
-        public StatsReplyMessage(int infected) => Infected = infected;
+        public int InQuarantine { get; }
+        public StatsReplyMessage(int infected, int inQuarantine)
+        {
+            Infected = infected;
+            InQuarantine = inQuarantine;
+        }
     }
 
     public class SanepidActor : ReceiveActor
     {
         public int Infected { get; set; }
+        public int InQuarantaie { get; set; }
 
         public SanepidActor()
         {
             Receive<PersonActor.InfectedMessage>(message => Infected++);
-            Receive<StatsAskMessage>(message => Sender.Tell(new StatsReplyMessage(Infected), Self));
+            Receive<PersonActor.GoToQuarantineMessage>(message => InQuarantaie++);
+            Receive<PersonActor.FinishQuarantineMessage>(message => InQuarantaie--);
+            Receive<StatsAskMessage>(message => Sender.Tell(new StatsReplyMessage(Infected, InQuarantaie), Self));
         }
     }
 }
