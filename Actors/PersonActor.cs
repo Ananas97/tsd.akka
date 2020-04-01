@@ -8,6 +8,8 @@ namespace TSD.Akka.Actors
     {
 
         public const int TransmissionProbability = 50;
+        public const int IncubationPeriod = 5; //days after infection when patient becomes symptomatic
+        public const int TimeToBecomeContagious = 3; // days after infection when patient can infect others, should be lower than IncubationPeriod
 
         static Random random = new Random();
         public int SocialContacts {get; private set;}
@@ -32,12 +34,16 @@ namespace TSD.Akka.Actors
         public enum PersonState
         {
             Uninfected,
-            Infected,
+            Incubating,
+            Contagious,
+            Symptomatic
         }
 
         private readonly ILoggingAdapter log = Context.GetLogger();
 
         private PersonState state = PersonState.Uninfected;
+
+        private int daysSinceInfection = -1;
 
         public PersonActor()
         {
@@ -51,6 +57,23 @@ namespace TSD.Akka.Actors
 
         private void OnStartDayMessage(StartDayMessage message)
         {
+            if (daysSinceInfection != -1)
+            {
+                daysSinceInfection++;
+                if (daysSinceInfection == IncubationPeriod && state != PersonState.Symptomatic)
+                {
+                    var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
+                    sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
+
+                    state = PersonState.Symptomatic;
+                    Become(Symptomatic);
+                } else if (daysSinceInfection == TimeToBecomeContagious && state != PersonState.Contagious)
+                {
+                    state = PersonState.Contagious;
+                    Become(Contagious);
+                }
+            }
+
             int contacts = random.Next(0, SocialContacts);
             for (int i = 0; i < contacts; i++)
             {
@@ -62,11 +85,11 @@ namespace TSD.Akka.Actors
         {
             var randomPerson = Context.Parent;
 
-            if (state == PersonState.Uninfected)
+            if (state == PersonState.Uninfected || state == PersonState.Incubating)
             {
                 randomPerson.Tell(new ChatMessage("Hello, my friend!"));
             }
-            else if (state == PersonState.Infected)
+            else if (state == PersonState.Symptomatic || state == PersonState.Contagious)
             {
                 randomPerson.Tell(new InfectedMessage("Hello, my friend! I'm infected, and I'll infect you too!"));
             }
@@ -75,16 +98,28 @@ namespace TSD.Akka.Actors
         private void OnInfectedMessage(InfectedMessage message)
         {
 
-            if (message.MessageText == "Initial infection." || random.Next() % 100 < TransmissionProbability)
+            if ((message.MessageText == "Initial infection." || random.Next() % 100 < TransmissionProbability)
+                && state == PersonState.Uninfected)
             {
-                var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
-                sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
-
-                Become(Infected);
+                daysSinceInfection = 0;
+                state = PersonState.Incubating;
+                Become(Incubating);
             }
         }
 
-        private void Infected()
+        private void Incubating()
+        {
+            Receive<StartDayMessage>(OnStartDayMessage);
+            Receive<ChatMessage>(message => Sender.Tell(new ChatMessage("I'm incubating but I can't infect you just yet!"), Context.Self));
+        }
+
+        private void Contagious()
+        {
+            Receive<StartDayMessage>(OnStartDayMessage);
+            Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection even though I am still asymptomatic."), Context.Self));
+        }
+
+        private void Symptomatic()
         {
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
