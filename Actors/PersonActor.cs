@@ -29,10 +29,17 @@ namespace TSD.Akka.Actors
             public InfectedMessage(string messageText) => MessageText = messageText;
         }
 
+        public class VaccinationMessage
+        {
+            public string MessageText { get; }
+            public VaccinationMessage(string messageText) => MessageText = messageText;
+        }
+
         public enum PersonState
         {
             Uninfected,
             Infected,
+            Vaccinated
         }
 
         private readonly ILoggingAdapter log = Context.GetLogger();
@@ -46,6 +53,7 @@ namespace TSD.Akka.Actors
             SocialContacts = random.Next(2,15);
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<InfectedMessage>(OnInfectedMessage);
+            Receive<VaccinationMessage>(OnVaccinationMessage);
         }
 
 
@@ -62,7 +70,7 @@ namespace TSD.Akka.Actors
         {
             var randomPerson = Context.Parent;
 
-            if (state == PersonState.Uninfected)
+            if (state == PersonState.Uninfected || state == PersonState.Vaccinated )
             {
                 randomPerson.Tell(new ChatMessage("Hello, my friend!"));
             }
@@ -70,6 +78,12 @@ namespace TSD.Akka.Actors
             {
                 randomPerson.Tell(new InfectedMessage("Hello, my friend! I'm infected, and I'll infect you too!"));
             }
+        }
+
+
+        private void OnVaccinationMessage(VaccinationMessage message)
+        {
+                Become(Vaccinated);
         }
 
         private void OnInfectedMessage(InfectedMessage message)
@@ -82,12 +96,18 @@ namespace TSD.Akka.Actors
 
                 Become(Infected);
             }
+
         }
 
         private void Infected()
         {
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
+        }
+
+        private void Vaccinated()
+        {
+            Receive<StartDayMessage>(OnStartDayMessage);
         }
     }
 }
