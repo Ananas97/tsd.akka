@@ -9,6 +9,8 @@ namespace TSD.Akka.Actors
 
         public const int TransmissionProbability = 50;
 
+        static Random random = new Random();
+        public int SocialContacts {get; private set;}
         public class StartDayMessage
         {
             public string MessageText { get; }
@@ -41,6 +43,7 @@ namespace TSD.Akka.Actors
         {
             // log.Info($"Created person {Context.Self.Path}");
 
+            SocialContacts = random.Next(2,15);
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<InfectedMessage>(OnInfectedMessage);
         }
@@ -48,7 +51,8 @@ namespace TSD.Akka.Actors
 
         private void OnStartDayMessage(StartDayMessage message)
         {
-            for (int i = 0; i < 5; i++)
+            int contacts = random.Next(0, SocialContacts);
+            for (int i = 0; i < contacts; i++)
             {
                 Chat();
             }
@@ -70,9 +74,8 @@ namespace TSD.Akka.Actors
 
         private void OnInfectedMessage(InfectedMessage message)
         {
-            Random rnd = new Random();
 
-            if (message.MessageText == "Initial infection." || rnd.Next() % 100 < TransmissionProbability)
+            if (message.MessageText == "Initial infection." || random.Next() % 100 < TransmissionProbability)
             {
                 var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
                 sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
