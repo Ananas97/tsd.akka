@@ -49,6 +49,11 @@ namespace TSD.Akka.Actors
             {
                 Chat();
             }
+
+            if (state == PersonState.Infected)
+            {
+                Console.WriteLine("I'm infected");
+            }
         }
 
         private void Chat()
@@ -75,6 +80,7 @@ namespace TSD.Akka.Actors
 
         private void Infected()
         {
+            state = PersonState.Infected;
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
         }
