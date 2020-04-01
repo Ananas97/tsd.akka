@@ -6,6 +6,8 @@ namespace TSD.Akka.Actors
 {
     class PersonActor : ReceiveActor
     {
+        static Random random = new Random();
+        public int SocialContacts {get; private set;}
         public class StartDayMessage
         {
             public string MessageText { get; }
@@ -38,6 +40,7 @@ namespace TSD.Akka.Actors
         {
             // log.Info($"Created person {Context.Self.Path}");
 
+            SocialContacts = random.Next(2,15);
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<InfectedMessage>(OnInfectedMessage);
         }
@@ -45,7 +48,8 @@ namespace TSD.Akka.Actors
 
         private void OnStartDayMessage(StartDayMessage message)
         {
-            for (int i = 0; i < 5; i++)
+            int contacts = random.Next(0, SocialContacts);
+            for (int i = 0; i < contacts; i++)
             {
                 Chat();
             }
