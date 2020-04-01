@@ -15,7 +15,7 @@ namespace TSD.Akka.Commands
         public override Task<CommandResult> ExecuteAsync(CancellationToken cancel)
         {
             var randomPerson = System.ActorSelection($"user/{ActorNames.People}");
-            randomPerson.Tell(new PersonActor.InfectedMessage("Hello, you've been chosen to be infected!"));
+            randomPerson.Tell(new PersonActor.InfectedMessage("Initial infection."));
 
             return Task.FromResult(CommandResult.Success);
         }

@@ -6,6 +6,9 @@ namespace TSD.Akka.Actors
 {
     class PersonActor : ReceiveActor
     {
+
+        public const int TransmissionProbability = 50;
+
         public class StartDayMessage
         {
             public string MessageText { get; }
@@ -67,10 +70,15 @@ namespace TSD.Akka.Actors
 
         private void OnInfectedMessage(InfectedMessage message)
         {
-            var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
-            sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
+            Random rnd = new Random();
 
-            Become(Infected);
+            if (message.MessageText == "Initial infection." || rnd.Next() % 100 < TransmissionProbability)
+            {
+                var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
+                sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
+
+                Become(Infected);
+            }
         }
 
         private void Infected()
