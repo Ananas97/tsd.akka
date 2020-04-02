@@ -156,9 +156,22 @@ namespace TSD.Akka.Actors
             if (random.Next(2) == 0) return;
             //go to war
             var warOutcome = random.Next(10);
-            if(warOutcome == 0) Become(Dead);   //fallen in glorious battle
-            if(warOutcome > 5) _paperRolls += 8; //victory, got paper - 8 rolls pack
-            //else: had to retreat, no paper gained
+            var warStatsActor = Context.ActorSelection($"/user/{ActorNames.WarStats}");
+            if (warOutcome == 0)
+            {
+                Become(Dead);   //fallen in glorious battle
+                warStatsActor.Tell(new WarOutcomeMessage(WarOutcomeMessage.WarOutcome.Fallen));
+            }
+            else if (warOutcome > 5)
+            {
+                _paperRolls += 8; //victory, got paper - 8 rolls pack
+                warStatsActor.Tell(new WarOutcomeMessage(WarOutcomeMessage.WarOutcome.Victory));
+            }
+            else
+            {
+                //had to retreat, no paper gained
+                warStatsActor.Tell(new WarOutcomeMessage(WarOutcomeMessage.WarOutcome.Defeat));
+            }
         }
 
         private void Chat()
@@ -241,5 +254,6 @@ namespace TSD.Akka.Actors
 //            Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm sending you an infection!"), Context.Self));
         }
+
     }
 }
