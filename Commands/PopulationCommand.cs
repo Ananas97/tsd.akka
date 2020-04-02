@@ -27,6 +27,10 @@ namespace TSD.Akka.Commands
 
             Console.WriteLine($"One doctor was created");
 
+            System.ActorOf(Props.Create<SoldierActor>().WithRouter(new RandomPool(10)), ActorNames.Soldier);
+
+            Console.WriteLine($"10 soldiers were created");
+
             return Task.FromResult(CommandResult.Success);
         }
     }

@@ -22,6 +22,9 @@ namespace TSD.Akka.Commands
         [Command(typeof(SanepidStatsCommand), LongName = "sanepid_stats", Description = "Show Sanepid's statistics for today")]
         SanepidStats,
 
+        [Command(typeof(SoldierCommand), LongName = "soldier_create", Description = "Creates a soldier who can send people to quarantine.")]
+        CreateSoldier,
+
         [Command(typeof(ExitCommand), Description = "Exits the application")]
         Exit
     }
