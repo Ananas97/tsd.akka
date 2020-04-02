@@ -36,6 +36,7 @@ namespace TSD.Akka
         private static void RegisterGlobalActors(ActorSystem system)
         {
             system.ActorOf<SanepidActor>(ActorNames.Sanepid);
+            system.ActorOf<WarStatsActor>(ActorNames.WarStats);
         }
     }
 }
