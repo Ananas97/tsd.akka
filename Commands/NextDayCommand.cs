@@ -22,6 +22,8 @@ namespace TSD.Akka.Commands
             people.Tell(new PersonActor.StartDayMessage("Brand new day", paperSupplied));
             var doctors = System.ActorSelection($"user/{ActorNames.Doctor}/*");
             doctors.Tell(new PersonActor.StartDayMessage("Brand new day", paperSupplied));
+            var soldiers = System.ActorSelection($"user/{ActorNames.Soldier}/*");
+            soldiers.Tell(new PersonActor.StartDayMessage("Brand new day", paperSupplied));
 
             return Task.FromResult(CommandResult.Success);
         }

@@ -60,6 +60,7 @@ namespace TSD.Akka.Actors
         private bool _disobeyedQuarantine; //true when person is in quarantine but disobeyed it on current day
         private int _daysSpentInQuarantine; //how many days person has spent in quarantine
         private int _paperRolls;
+        private bool _isWanted; //true when person is wanted by the police and the army
 
         public PersonActor()
         {
@@ -69,12 +70,24 @@ namespace TSD.Akka.Actors
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<InfectedMessage>(OnInfectedMessage);
             Receive<VaccinationMessage>(OnVaccinationMessage);
-            Receive<GoToQuarantineMessage>(OnGoToQuarantineMessage);
+        }
+
+        private void OnCheckBodyTemperatureMessage(SoldierActor.CheckBodyTemperatureMessage message)
+        {
+            if (random.Next(0, 50) != 1) //little risk that he/she will run away
+            {
+                _isWanted = false;
+                GoToQuarantine();
+            }
+            else
+            {
+                _isWanted = true;
+            }
         }
 
         //Soldier actor from issue #11 will be responsible for that
         //quarantine begins next day
-        private void OnGoToQuarantineMessage(GoToQuarantineMessage message)
+        private void GoToQuarantine()
         {
             _isInQuarantine = true;
             var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
@@ -213,6 +226,7 @@ namespace TSD.Akka.Actors
 //            Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
             Receive<DoctorActor.HealMessage>(OnHealMessage);
+            Receive<SoldierActor.CheckBodyTemperatureMessage>(OnCheckBodyTemperatureMessage);
         }
 
         private void Vaccinated()
