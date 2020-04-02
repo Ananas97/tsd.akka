@@ -18,6 +18,7 @@ namespace TSD.Akka.Commands
             var sanepid = System.ActorSelection($"user/{ActorNames.Sanepid}");
             var stats = await sanepid.Ask<StatsReplyMessage>(new StatsAskMessage(), TimeSpan.FromSeconds(5));
             Console.WriteLine($"Infected people: {stats.Infected}, people in quarantine: {stats.InQuarantine}");
+            Console.WriteLine($"Infected foreigners : {stats.InfectedForeigners}, foreigners in quarantine: {stats.QuarantinedForeigners}, foreigners overall: {stats.Foreigners}");
 
             return CommandResult.Success;
         }

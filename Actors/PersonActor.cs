@@ -6,6 +6,12 @@ namespace TSD.Akka.Actors
 {
     class PersonActor : ReceiveActor
     {
+        protected virtual void NotifySanepid()
+        {
+            var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
+            sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
+        }
+
         public const int TransmissionProbability = 50;
         public const int QuarantinePeriod = 7; //length of quarantine in days
 
@@ -56,11 +62,12 @@ namespace TSD.Akka.Actors
         private readonly ILoggingAdapter log = Context.GetLogger();
 
         private PersonState state = PersonState.Uninfected;
-        private bool _isInQuarantine; //true when person is in quarantine
+        protected bool _isInQuarantine; //true when person is in quarantine
         private bool _disobeyedQuarantine; //true when person is in quarantine but disobeyed it on current day
-        private int _daysSpentInQuarantine; //how many days person has spent in quarantine
+        protected int _daysSpentInQuarantine; //how many days person has spent in quarantine
         private int _paperRolls;
         private bool _isWanted; //true when person is wanted by the police and the army
+        protected bool aForeigner = false; //
 
         public PersonActor()
         {
@@ -87,7 +94,7 @@ namespace TSD.Akka.Actors
 
         //Soldier actor from issue #11 will be responsible for that
         //quarantine begins next day
-        private void GoToQuarantine()
+        protected virtual void GoToQuarantine()
         {
             _isInQuarantine = true;
             var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
@@ -117,17 +124,17 @@ namespace TSD.Akka.Actors
             if (message.PaperSupplied) PaperWarCouncil();
         }
 
-        private void NotInQuarantine()
+        protected void NotInQuarantine()
         {
             Receive<StartDayMessage>(OnStartDayMessage);
         }
 
-        private void InQuarantine()
+        protected void InQuarantine()
         {
             Receive<StartDayMessage>(OnStartDayInQuarantineMessage);
         }
 
-        private void FinishQuarantine()
+        protected virtual void FinishQuarantine()
         {
             _daysSpentInQuarantine = 0;
             _isInQuarantine = false;
@@ -185,7 +192,7 @@ namespace TSD.Akka.Actors
                 Become(Vaccinated);
         }
 
-        private void OnInfectedMessage(InfectedMessage message)
+        protected void OnInfectedMessage(InfectedMessage message)
         {
             if (_isInQuarantine && !_disobeyedQuarantine) return;    //when at home in quarantine no conversations will occur
             if (message.MessageText == "Initial infection." || random.Next() % 100 < TransmissionProbability)
@@ -198,8 +205,7 @@ namespace TSD.Akka.Actors
                 }
                 if(!paperShield)
                 {
-                    var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
-                    sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
+                    NotifySanepid();
 
                     state = PersonState.Infected;
                     Become(Infected);

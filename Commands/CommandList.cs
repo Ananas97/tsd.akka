@@ -24,6 +24,9 @@ namespace TSD.Akka.Commands
 
         [Command(typeof(SoldierCommand), LongName = "soldier_create", Description = "Creates a soldier who can send people to quarantine.")]
         CreateSoldier,
+        
+        [Command(typeof(IntroduceForeignerCommand), LongName = "introduce_foreigner", Description = "Introduces someone from abroad to the population that could be infected.")]
+        IntroduceForeigner,
 
         [Command(typeof(ExitCommand), Description = "Exits the application")]
         Exit
