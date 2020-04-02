@@ -16,7 +16,7 @@ namespace TSD.Akka.Commands
 
         public override Task<CommandResult> ExecuteAsync(CancellationToken cancel)
         {
-            var foreignerName = "/user/" + ActorNames.Foreigner + "_" + Guid.NewGuid();
+            var foreignerName = ActorNames.Foreigner + "_" + Guid.NewGuid();
 
             System.ActorOf(Props.Create<ForeignerActor>().WithRouter(new RandomPool(1)), foreignerName);
 
