@@ -18,7 +18,12 @@ namespace TSD.Akka.Actors
         public class StartDayMessage
         {
             public string MessageText { get; }
-            public StartDayMessage(string messageText) => MessageText = messageText;
+            public bool PaperSupplied { get; }
+            public StartDayMessage(string messageText, bool paperSupplied)
+            {
+                MessageText = messageText;
+                PaperSupplied = paperSupplied;
+            }
         }
 
         public class ChatMessage
@@ -54,6 +59,7 @@ namespace TSD.Akka.Actors
         private bool _isInQuarantine; //true when person is in quarantine
         private bool _disobeyedQuarantine; //true when person is in quarantine but disobeyed it on current day
         private int _daysSpentInQuarantine; //how many days person has spent in quarantine
+        private int _paperRolls;
 
         public PersonActor()
         {
@@ -76,7 +82,7 @@ namespace TSD.Akka.Actors
             Become(InQuarantine);
         }
 
-        private void OnStartDayInQuarantineMessage(StartDayMessage obj)
+        private void OnStartDayInQuarantineMessage(StartDayMessage message)
         {
             _daysSpentInQuarantine++;
             if (_daysSpentInQuarantine > QuarantinePeriod)
@@ -94,6 +100,8 @@ namespace TSD.Akka.Actors
             {
                 _disobeyedQuarantine = false;
             }
+            // opportunity of gaining paper is too lucrative not to consider going to war for it, even when in quarantine
+            if (message.PaperSupplied) PaperWarCouncil();
         }
 
         private void NotInQuarantine()
@@ -125,6 +133,19 @@ namespace TSD.Akka.Actors
             }
 
             if (state == PersonState.Infected && random.NextDouble() < 0.05) Become(Dead);
+            if(message.PaperSupplied) PaperWarCouncil();
+        }
+
+        //paper war council decides whether or not go to paper war
+        private void PaperWarCouncil()
+        {
+            //thoroughly thought out random decision
+            if (random.Next(2) == 0) return;
+            //go to war
+            var warOutcome = random.Next(10);
+            if(warOutcome == 0) Become(Dead);   //fallen in glorious battle
+            if(warOutcome > 5) _paperRolls += 8; //victory, got paper - 8 rolls pack
+            //else: had to retreat, no paper gained
         }
 
         private void Chat()
@@ -156,11 +177,20 @@ namespace TSD.Akka.Actors
             if (_isInQuarantine && !_disobeyedQuarantine) return;    //when at home in quarantine no conversations will occur
             if (message.MessageText == "Initial infection." || random.Next() % 100 < TransmissionProbability)
             {
-                var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
-                sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
+                var paperShield = false;
+                if (_paperRolls > 0)
+                {
+                    _paperRolls--; //used paper roll (gained in war in biedronka)
+                    paperShield = random.Next(2) == 0; //50% chance that paper will prevent from being infected
+                }
+                if(!paperShield)
+                {
+                    var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
+                    sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
 
-                state = PersonState.Infected;
-                Become(Infected);
+                    state = PersonState.Infected;
+                    Become(Infected);
+                }
             }
             else if(random.NextDouble()<0.05) Become(Carrier);
         }
