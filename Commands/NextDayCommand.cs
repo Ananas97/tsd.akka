@@ -27,7 +27,7 @@ namespace TSD.Akka.Commands
             
             var people = System.ActorSelection($"user/{ActorNames.People}/*");
             people.Tell(new PersonActor.StartDayMessage("Brand new day", paperSupplied));
-            var doctors = System.ActorSelection($"user/{ActorNames.Doctor}/*");
+            var doctors = System.ActorSelection($"user/{ActorNames.Hospital}/*");
             doctors.Tell(new PersonActor.StartDayMessage("Brand new day", paperSupplied));
             var soldiers = System.ActorSelection($"user/{ActorNames.Soldier}/*");
             soldiers.Tell(new PersonActor.StartDayMessage("Brand new day", paperSupplied));

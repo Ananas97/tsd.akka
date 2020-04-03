@@ -36,6 +36,7 @@ namespace TSD.Akka
         private static void RegisterGlobalActors(ActorSystem system)
         {
             system.ActorOf<SanepidActor>(ActorNames.Sanepid);
+            system.ActorOf(Props.Create(() => new HospitalActor(1)), ActorNames.Hospital);
             system.ActorOf<WarStatsActor>(ActorNames.WarStats);
         }
     }
