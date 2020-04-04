@@ -8,12 +8,24 @@ namespace TSD.Akka.Actors
     {
         public const int TransmissionProbability = 50;
         public const int QuarantinePeriod = 7; //length of quarantine in days
+        public Boolean OtherIllnesses { get; private set; }
+        private int NumberOfOtherIllnesses = random.Next(0, 5);
 
         static Random random = new Random();
         public int SocialContacts { get; private set; }
         public class GoToQuarantineMessage { }
         public class FinishQuarantineMessage { }
 
+        public void HasOtherIllnesses()
+        {
+            if (NumberOfOtherIllnesses == 0)
+            {
+                OtherIllnesses = false;
+            }
+            else {
+                OtherIllnesses = true;
+            }
+        }
 
         public class StartDayMessage
         {
