@@ -19,9 +19,9 @@ namespace TSD.Akka.Commands
 
         public override Task<CommandResult> ExecuteAsync(CancellationToken cancel)
         {
-            System.ActorOf(Props.Create<DoctorActor>().WithRouter(new RandomPool(DoctorCount)), ActorNames.Doctor);
+            System.ActorSelection($"/user/{ActorNames.Hospital}").Tell(new CreateDoctorMessage("Create new doctor!"));
 
-            Console.WriteLine($"Doctor was created");
+            // Console.WriteLine($"Doctor was created");
 
             return Task.FromResult(CommandResult.Success);
         }

@@ -27,7 +27,7 @@ namespace TSD.Akka.Actors
 
         private void OnStartDayMessage(PersonActor.StartDayMessage message)
         {
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 20; i++)
             {
                 Treatment();
             }
@@ -36,7 +36,7 @@ namespace TSD.Akka.Actors
         private void Treatment()
         {
             var randomPerson = Context.ActorSelection($"/user/{ActorNames.People}");
-            bool personCanBeTreated = random.Next(100) < 20;
+            bool personCanBeTreated = random.Next(100) < 15;
 
             if (state == PersonActor.PersonState.Uninfected)
             {
