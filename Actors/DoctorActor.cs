@@ -12,16 +12,13 @@ namespace TSD.Akka.Actors
 
     class DoctorActor : ReceiveActor
     {
-
         private readonly ILoggingAdapter log = Context.GetLogger();
-
         private PersonActor.PersonState state = PersonActor.PersonState.Uninfected;
         private int numberOfPatientsToday = 0;
         private Random random = new Random();
 
         public DoctorActor()
         {
-            // log.Info($"Created actor {Context.Self.Path}");
             Receive<PersonActor.StartDayMessage>(OnStartDayMessage);
             Receive<RequestTreatmentMessage>(OnTreatmentRequest);
         }
@@ -32,35 +29,26 @@ namespace TSD.Akka.Actors
             numberOfPatientsToday = 0;
         }
 
-        private void OnInfectedMessage(PersonActor.InfectedMessage message)
-        {
-            var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
-            sanepid.Tell(new PersonActor.InfectedMessage("I'm informing that I'm infected"));
-
-            Become(Infected);
-        }
-
         private void OnTreatmentRequest(RequestTreatmentMessage message)
         {
-            System.Console.WriteLine(message.MessageText + " " + Sender.Path);
-
             numberOfPatientsToday++;
-
-            bool personCanBeTreated = random.NextDouble() <= 1 && numberOfPatientsToday <= 5;
-
-            if (state == PersonActor.PersonState.Uninfected && personCanBeTreated)
+            if (state == PersonActor.PersonState.Uninfected && numberOfPatientsToday <= 5)
             {
-                if (random.NextDouble() <= 0.01) 
+                if (random.NextDouble() <= 0.01)
                 {
-                    Become(Infected);
                     System.Console.WriteLine("Doctor is infected");
+                    Become(Infected);
                 }
 
-                Sender.Tell(new HealMessage("Lucky you! You received treatment."));
+                bool personWillBeTreated = random.NextDouble() <= 0.8;
+                if (personWillBeTreated)
+                {
+                    Sender.Tell(new HealMessage("Lucky you! You received treatment."));
+
+                    var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
+                    sanepid.Tell(new HealMessage("A person has been healed."));
+                }
             }
-
-
-
         }
 
         private void Infected()

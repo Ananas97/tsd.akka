@@ -233,7 +233,6 @@ namespace TSD.Akka.Actors
 
         private void OnHealMessage(HealMessage message)
         {
-            System.Console.WriteLine(message.MessageText + " " + Context.Self.Path);
             state = PersonState.Uninfected;
             if (_isInQuarantine) FinishQuarantine();
             Become(Uninfected);
