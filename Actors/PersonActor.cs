@@ -10,7 +10,7 @@ namespace TSD.Akka.Actors
         public const int QuarantinePeriod = 7; //length of quarantine in days
 
         static Random random = new Random();
-        public int SocialContacts {get; private set;}
+        public int SocialContacts { get; private set; }
         public class GoToQuarantineMessage { }
         public class FinishQuarantineMessage { }
 
@@ -66,7 +66,7 @@ namespace TSD.Akka.Actors
         {
             // log.Info($"Created person {Context.Self.Path}");
 
-            SocialContacts = random.Next(2,15);
+            SocialContacts = random.Next(2, 15);
             Receive<StartDayMessage>(OnStartDayMessage);
             Receive<InfectedMessage>(OnInfectedMessage);
             Receive<VaccinationMessage>(OnVaccinationMessage);
@@ -115,16 +115,19 @@ namespace TSD.Akka.Actors
             }
             // opportunity of gaining paper is too lucrative not to consider going to war for it, even when in quarantine
             if (message.PaperSupplied) PaperWarCouncil();
+            if (state == PersonState.Infected && random.NextDouble() < 0.2) RequestTreatment();
         }
 
         private void NotInQuarantine()
         {
             Receive<StartDayMessage>(OnStartDayMessage);
+            Receive<HealMessage>(OnHealMessage);
         }
 
         private void InQuarantine()
         {
             Receive<StartDayMessage>(OnStartDayInQuarantineMessage);
+            Receive<HealMessage>(OnHealMessage);
         }
 
         private void FinishQuarantine()
@@ -146,7 +149,8 @@ namespace TSD.Akka.Actors
             }
 
             if (state == PersonState.Infected && random.NextDouble() < 0.05) Become(Dead);
-            if(message.PaperSupplied) PaperWarCouncil();
+            if (message.PaperSupplied) PaperWarCouncil();
+            if (state == PersonState.Infected && random.NextDouble() < 0.2) RequestTreatment();
         }
 
         //paper war council decides whether or not go to paper war
@@ -174,11 +178,17 @@ namespace TSD.Akka.Actors
             }
         }
 
+        private void RequestTreatment()
+        {
+            var hospitalActor = Context.ActorSelection($"/user/{ActorNames.Hospital}");
+            hospitalActor.Tell(new RequestTreatmentMessage("I request to be treated"));
+        }
+
         private void Chat()
         {
             var randomPerson = Context.Parent;
 
-            if (state == PersonState.Uninfected || state == PersonState.Vaccinated )
+            if (state == PersonState.Uninfected || state == PersonState.Vaccinated)
             {
                 randomPerson.Tell(new ChatMessage("Hello, my friend!"));
             }
@@ -195,7 +205,7 @@ namespace TSD.Akka.Actors
 
         private void OnVaccinationMessage(VaccinationMessage message)
         {
-                Become(Vaccinated);
+            Become(Vaccinated);
         }
 
         private void OnInfectedMessage(InfectedMessage message)
@@ -209,7 +219,7 @@ namespace TSD.Akka.Actors
                     _paperRolls--; //used paper roll (gained in war in biedronka)
                     paperShield = random.Next(2) == 0; //50% chance that paper will prevent from being infected
                 }
-                if(!paperShield)
+                if (!paperShield)
                 {
                     var sanepid = Context.ActorSelection($"/user/{ActorNames.Sanepid}");
                     sanepid.Tell(new InfectedMessage("I'm informing that I'm infected"));
@@ -218,40 +228,40 @@ namespace TSD.Akka.Actors
                     Become(Infected);
                 }
             }
-            else if(random.NextDouble()<0.05) Become(Carrier);
+            else if (random.NextDouble() < 0.05) Become(Carrier);
         }
 
-        private void OnHealMessage(DoctorActor.HealMessage message)
+        private void OnHealMessage(HealMessage message)
         {
             state = PersonState.Uninfected;
-            if(_isInQuarantine) FinishQuarantine();
+            if (_isInQuarantine) FinishQuarantine();
             Become(Uninfected);
         }
 
         private void Uninfected()
         {
-//            Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
+            // Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
             Receive<InfectedMessage>(OnInfectedMessage);
         }
 
         private void Infected()
         {
-//            Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
+            // Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm resending you an infection!"), Context.Self));
-            Receive<DoctorActor.HealMessage>(OnHealMessage);
+            Receive<HealMessage>(OnHealMessage);
             Receive<SoldierActor.CheckBodyTemperatureMessage>(OnCheckBodyTemperatureMessage);
         }
 
         private void Vaccinated()
         {
-//            Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
+            // Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
         }
-        
-        private void Dead(){}
+
+        private void Dead() { }
 
         private void Carrier()
         {
-//            Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
+            // Receive<StartDayMessage>(OnStartDayMessage); //it is already set in constructor, becoming uninfected doesn't affect this message handling
             Receive<ChatMessage>(message => Sender.Tell(new InfectedMessage("I'm sending you an infection!"), Context.Self));
         }
 
